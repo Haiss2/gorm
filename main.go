@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -42,7 +43,8 @@ func batch(num int) []interface{} {
 	return batch_users
 }
 
-func insertOne(num int) {
+func insertOne(wg *sync.WaitGroup, num int) {
+	defer wg.Done()
 	makes := []string{"Toyota", "Honda", "Nissan", "Ford"}
 	ModelName := []string{"Tundra", "Accord", "Sentra", "F-150"}
 	for n := 0; n < num; n++ {
@@ -55,6 +57,7 @@ func insertOne(num int) {
 			UpdatedAt: time.Now(),
 		})
 	}
+
 }
 
 func simpleQuery() {
@@ -83,7 +86,7 @@ func updateDoc() {
 
 func updateDocs() {
 	filter := bson.D{{"make", "Honda"}}
-	update := bson.D{{"$set", bson.D{{"year", -1}}}}
+	update := bson.D{{"$set", bson.D{{"year", -1}, {"createdat", time.Now()}}}}
 	_, err := collection.UpdateMany(context.TODO(), filter, update)
 	if err != nil {
 		panic(err)
@@ -120,7 +123,13 @@ func main() {
 	start := time.Now().UnixNano()
 	fmt.Println("Start time: ", start)
 
-	// insertOne(10)
+	// var wg sync.WaitGroup
+
+	// for i := 0; i < 100; i++ {
+	// 	wg.Add(1)
+	// 	go insertOne(&wg, 100)
+	// }
+	// wg.Wait()
 
 	// collection.InsertMany(context.TODO(), batch(1000000))
 
@@ -128,11 +137,12 @@ func main() {
 
 	// updateDoc()
 
-	// updateDocs()
+	updateDocs()
 
-	deleteMany()
+	// deleteMany()
 
 	end := time.Now().UnixNano()
 	fmt.Println("End time: ", end)
-	fmt.Println("Write time:", (end-start)/1000, "micro seconds")
+	fmt.Println("Write time:", (end-start)/1000000, "ms")
+
 }
