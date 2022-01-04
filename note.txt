@@ -1,0 +1,136 @@
+A. Variables
+1. ErrClientDisconnected is returned when disconnected Client is used to run an operation.
+2. ErrEmptySlice is returned when an empty slice is passed to a CRUD method that requires a non-empty slice.
+3. ErrInvalidIndexValue is returned if an index is created with a keys document that has a value that is not a number or string.
+4. ErrMultipleIndexDrop is returned if multiple indexes would be dropped from a call to IndexView.DropOne.
+5. ErrNilDocument is returned when a nil document is passed to a CRUD method.
+6. ErrNilValue is returned when a nil value is passed to a CRUD method.
+7. ErrNoDocuments is returned by SingleResult methods when the operation that created the SingleResult did not return any documents.
+8. ErrNonStringIndexName is returned if an index is created with a name that is not a string. 
+9. ErrUnacknowledgedWrite is returned by operations that have an unacknowledged write concern.
+10. ErrWrongClient is returned when a user attempts to pass in a session created by a different client than the method call is using.
+
+B. Function
+1. func IsDuplicateKeyError(err error) bool
+    return true if err is a duplicate key error
+2. func IsNetworkError(err error) bool
+    return true if err is a network error
+3. func IsTimeout(err error) bool
+    return true if err is from a timeout
+4. func WithSession(ctx context.Context, sess Session, fn func(SessionContext) error) error
+    create a new SessionContext from the ctx and sess parameters and uses it to call the fn call back.
+    if the ctx parameter already contains a Session, that Session'll be replaced with the one provided
+    any error returned by the fn callback will be returned without any modifications
+
+C. Types
+1. BSONAppender interface {
+    AppendBSON ([]byte, interface{} ) ([]byte, error)
+}
+2. type BSONAppenderFunc func([]byte, interface{}) ([]byte, error)
+3. func (baf BSONAppenderFunc) AppendBSON(dst []byte, val interface{}) ([]byte, error)
+
+
+4. type BulkWriteError struct {
+	WriteError            // The WriteError that occurred.
+	Request    WriteModel // The WriteModel that caused this error.
+}
+occurred during execution of one operation in a BulkWrite
+5. func (bwe BulkWriteError) Error() string
+6. type BulkWriteException struct {
+	// The write concern error that occurred, or nil if there was none.
+	WriteConcernError *WriteConcernError
+
+	// The write errors that occurred during operation execution.
+	WriteErrors []BulkWriteError
+
+	// The categories to which the exception belongs.
+	Labels []string
+}
+the error type returned by BulkWrite and InsertMany operations
+7. func (bwe BulkWriteException) Error() string
+8. func (bwe BulkWriteException) HasErrorCode(code int) bool
+return true if any of the contained errors have the specified code
+9. func (bwe BulkWriteException) HasErrorCodeWithMessage(code int, message string) bool 
+return true if any of the contained errors have the specified code and message
+10. func (bwe BulkWriteException) HasErrorLabel(label string) bool
+return true if  the error contains th specified label
+11. func (bwr BulkWriteError) HasErrorMessage(msg string) bool
+
+
+12. type BulkWriteResult struct {
+	// The number of documents inserted.
+	InsertedCount int64
+
+	// The number of documents matched by filters in update and replace operations.
+	MatchedCount int64
+
+	// The number of documents modified by update and replace operations.
+	ModifiedCount int64
+
+	// The number of documents deleted.
+	DeletedCount int64
+
+	// The number of documents upserted by update and replace operations.
+	UpsertedCount int64
+
+	// A map of operation index to the _id of each upserted document.
+	UpsertedIDs map[int64]interface{}
+}
+result returned by a BulkWrite operation
+
+
+13. type ChangeStream struct {
+	// Current is the BSON bytes of the current event. This property is only valid until the next call to Next or
+	// TryNext. If continued access is required, a copy must be made.
+	Current bson.Raw
+	// contains filtered or unexported fields
+}
+14. func (cs *ChangeStream) Close(ctx context.Context) error
+15. func (cs *ChangeStream) Decode(val interface{}) error
+16. func (cs *ChangeStream) Err() error
+17. func (cs *ChangeStream) ID() int64
+18. func (cs *ChangeStream) Next(ctx context.Context) bool
+19. func (cs *ChangeStream) ResumeToken() bson.Raw
+20. func (cs *ChangeStream) TryNext(ctx context.Context) bool
+
+type Client
+	func Connect(ctx context.Context, opts ...*options.ClientOptions) (*Client, error)
+	func NewClient(opts ...*options.ClientOptions) (*Client, error)
+	func (c *Client) Connect(ctx context.Context) error
+	func (c *Client) Database(name string, opts ...*options.DatabaseOptions) *Database
+	func (c *Client) Disconnect(ctx context.Context) error
+	func (c *Client) ListDatabaseNames(ctx context.Context, filter interface{}, opts ...*options.ListDatabasesOptions) ([]string, error)
+	func (c *Client) ListDatabases(ctx context.Context, filter interface{}, opts ...*options.ListDatabasesOptions) (ListDatabasesResult, error)
+	func (c *Client) NumberSessionsInProgress() int
+	func (c *Client) Ping(ctx context.Context, rp *readpref.ReadPref) error
+	func (c *Client) StartSession(opts ...*options.SessionOptions) (Session, error)
+	func (c *Client) UseSession(ctx context.Context, fn func(SessionContext) error) error
+	func (c *Client) UseSessionWithOptions(ctx context.Context, opts *options.SessionOptions, ...) error
+	func (c *Client) Watch(ctx context.Context, pipeline interface{}, ...) (*ChangeStream, error)
+
+
+type Collection
+	func (coll *Collection) Aggregate(ctx context.Context, pipeline interface{}, opts ...*options.AggregateOptions) (*Cursor, error)
+	func (coll *Collection) BulkWrite(ctx context.Context, models []WriteModel, opts ...*options.BulkWriteOptions) (*BulkWriteResult, error)
+	func (coll *Collection) Clone(opts ...*options.CollectionOptions) (*Collection, error)
+	func (coll *Collection) CountDocuments(ctx context.Context, filter interface{}, opts ...*options.CountOptions) (int64, error)
+	func (coll *Collection) Database() *Database
+	func (coll *Collection) DeleteMany(ctx context.Context, filter interface{}, opts ...*options.DeleteOptions) (*DeleteResult, error)
+	func (coll *Collection) DeleteOne(ctx context.Context, filter interface{}, opts ...*options.DeleteOptions) (*DeleteResult, error)
+	func (coll *Collection) Distinct(ctx context.Context, fieldName string, filter interface{}, ...) ([]interface{}, error)
+	func (coll *Collection) Drop(ctx context.Context) error
+	func (coll *Collection) EstimatedDocumentCount(ctx context.Context, opts ...*options.EstimatedDocumentCountOptions) (int64, error)
+	func (coll *Collection) Find(ctx context.Context, filter interface{}, opts ...*options.FindOptions) (*Cursor, error)
+	func (coll *Collection) FindOne(ctx context.Context, filter interface{}, opts ...*options.FindOneOptions) *SingleResult
+	func (coll *Collection) FindOneAndDelete(ctx context.Context, filter interface{}, ...) *SingleResult
+	func (coll *Collection) FindOneAndReplace(ctx context.Context, filter interface{}, replacement interface{}, ...) *SingleResult
+	func (coll *Collection) FindOneAndUpdate(ctx context.Context, filter interface{}, update interface{}, ...) *SingleResult
+	func (coll *Collection) Indexes() IndexView
+	func (coll *Collection) InsertMany(ctx context.Context, documents []interface{}, ...) (*InsertManyResult, error)
+	func (coll *Collection) InsertOne(ctx context.Context, document interface{}, opts ...*options.InsertOneOptions) (*InsertOneResult, error)
+	func (coll *Collection) Name() string
+	func (coll *Collection) ReplaceOne(ctx context.Context, filter interface{}, replacement interface{}, ...) (*UpdateResult, error)
+	func (coll *Collection) UpdateByID(ctx context.Context, id interface{}, update interface{}, ...) (*UpdateResult, error)
+	func (coll *Collection) UpdateMany(ctx context.Context, filter interface{}, update interface{}, ...) (*UpdateResult, error)
+	func (coll *Collection) UpdateOne(ctx context.Context, filter interface{}, update interface{}, ...) (*UpdateResult, error)
+	func (coll *Collection) Watch(ctx context.Context, pipeline interface{}, ...) (*ChangeStream, error)
