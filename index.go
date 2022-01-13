@@ -31,9 +31,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("Connected to MongoDB!")
-	collection = client.Database("test_db").Collection("cars")
-
-	var indexView *mongo.IndexView
+	collection := client.Database("test_db").Collection("cars")
 
 	// Create two indexes: {name: 1, email: 1} and {name: 1, age: 1}
 	// For the first index, specify no options. The name will be generated as
@@ -53,7 +51,7 @@ func main() {
 	// Specify the MaxTime option to limit the amount of time the operation can
 	// run on the server
 	opts := options.CreateIndexes().SetMaxTime(2 * time.Second)
-	names, err := indexView.CreateMany(context.TODO(), models, opts)
+	names, err := collection.Indexes().CreateMany(context.TODO(), models, opts)
 	if err != nil {
 		log.Fatal(err)
 	}
